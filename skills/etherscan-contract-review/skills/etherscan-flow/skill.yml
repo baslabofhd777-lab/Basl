@@ -1,0 +1,4 @@
+name: "Etherscan Flow"
+slug: "etherscan-flow"
+version: "1.0.0"
+description: "تتبع وإدارة تدفق العمليات البرمجية في إيثيرسكان"
