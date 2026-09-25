@@ -1,0 +1,23 @@
+name: "Copilot Auto Merge"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  auto-approve-and-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copilot Review and Merge
+        uses: github/copilot-review-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          instructions: |
+            راجع طلب السحب هذا بدقة. 
+            إذا كانت التغييرات آمنة واختبارات الـ CI ناجحة، قم بكتابة تعليق موافقة (Approve) ثم ادمج (Merge) الطلب فوراً لإنهاء العمل بالكامل.
