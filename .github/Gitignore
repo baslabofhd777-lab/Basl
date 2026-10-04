@@ -1,0 +1,14 @@
+# Secrets & Environment
+.env
+.env.*
+*.env
+!.env.example
+
+# Node
+node_modules/
+package-lock.json  # أو اتركه إذا كنت تحتاجه
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/
