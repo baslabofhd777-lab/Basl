@@ -1,8 +1,11 @@
-name: "Smart Contract QA & Copilot Merge"
+name: "Smart Contract QA"
 
 on:
   pull_request:
     types: [opened, synchronize]
+
+permissions:
+  contents: read
 
 jobs:
   smart-contract-scan:
@@ -11,26 +14,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # خطوة تشغيل أداة Slither لفحص ثغرات العقود الذكية تلقائياً
+      # فحص ثغرات العقود الذكية تلقائياً بأداة Slither
       - name: Run Slither Security Scan
         uses: crytic/slither-action@v0.4.0
-        continue-on-error: false # سيتوقف العمل تماماً إذا وُجدت ثغرة خطيرة
-
-  auto-approve-and-merge:
-    needs: smart-contract-scan # لن يشتغل هذا الجزء إلا إذا نجح فحص العقود الذكية أعلاه
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Copilot Review and Merge
-        uses: github/copilot-review-action@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          instructions: |
-            بما أن فحص العقود الذكية السكيورتي (Slither Scan) قد نجح تماماً ولم يجد ثغرات حرجة:
-            1. راجع منطق عمل العقد الذكي وتأكد من سلامة التعديل.
-            2. قم بالموافقة (Approve) ودمج الكود (Merge) فوراً لإنهاء العمل.
+          fail-on: high
