@@ -34,6 +34,41 @@
     <footer>
         جميع الحقوق محفوظة © 2026 | باسل حسين
     </footer>
+<!-- مكان عرض الرصيد في الصفحة -->
+<div style="padding: 20px; font-family: sans-serif; text-align: center; color: white; background: #222; margin: 20px auto; max-width: 400px; border-radius: 8px;">
+    <h3>رصيد المحفظة الحالي:</h3>
+    <h2 id="balance-display" style="color: #f3ba2f;">جاري التحميل...</h2>
+</div>
 
+<!-- كود جافا سكريبت لاسترداد الرصيد وعرضه تلقائياً -->
+<script>
+async function getMyBalance() {
+    try {
+        const response = await fetch('https://tatum.io', {
+                    method: 'GET',
+                    
+        headers: {t-6a678d2ce9872401a3f90563-40beb9b49a1a4c3eb4527b8e
+            'x-api-key': 't-6a67****527b8e' // 👈 ضع مفتاحك الكامل الفعلي هنا داخل علامتي الاقتباس
+        }
+        });
+
+        const data = await response.json();
+        
+        // استخراج الرصيد وعرضه
+        if(data && data.balance) {
+            document.getElementById("balance-display").innerText = data.balance + " BNB";
+        } else {
+            document.getElementById("balance-display").innerText = "0 BNB";
+        }
+
+    } catch (error) {
+        console.error("حدث خطأ:", error);
+        document.getElementById("balance-display").innerText = "خطأ في جلب البيانات";
+    }
+}
+
+// تشغيل الدالة فوراً عند تحميل الصفحة
+window.onload = getMyBalance;
+</script>
 </body>
 </html>
