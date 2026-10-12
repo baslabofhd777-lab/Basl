@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "skills_path": "./skills",
+  "auto_discover": true,
+  "default_agent_mode": "Balance",
+  "allowed_commands": ["/review-code", "/fix-bugs", "/explain"]
+}
