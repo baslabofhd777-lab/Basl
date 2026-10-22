@@ -33,9 +33,8 @@ contract UpgradedStandard is Pausable {
         emit Transfer(msg.sender, _to, _value);
         return true;
     }
-
-    function approve(address _spender, uint256 _value) public whenNotPaused returns (bool success) {
-        allowance[msg.sender][_spender] = _value;
+require(_value == 0 || allowance[msg.sender][_spender] == 0);
+allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
