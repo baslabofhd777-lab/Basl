@@ -1,41 +1,63 @@
-pragma solidity ^0.4.18;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
+/**
+ * @title Ownable
+ * @dev Basic access control with owner
+ */
 contract Ownable {
     address public owner;
 
-    function Ownable() public {
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor() {
         owner = msg.sender;
+        emit OwnershipTransferred(address(0), msg.sender);
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Ownable: caller is not the owner");
         _;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
     }
 }
 
+/**
+ * @title Pausable
+ * @dev Allows owner to pause and unpause contract functions
+ */
 contract Pausable is Ownable {
-    event Pause();
-    event Unpause();
+    bool public paused;
 
-    bool public paused = false;
+    event Paused(address account);
+    event Unpaused(address account);
+
+    constructor() {
+        paused = false;
+    }
 
     modifier whenNotPaused() {
-        require(!paused);
+        require(!paused, "Pausable: paused");
         _;
     }
 
     modifier whenPaused() {
-        require(paused);
+        require(paused, "Pausable: not paused");
         _;
     }
 
-    function pause() onlyOwner whenNotPaused public {
+    function pause() public onlyOwner whenNotPaused {
         paused = true;
-        emit Pause();
+        emit Paused(msg.sender);
     }
 
-    function unpause() onlyOwner whenPaused public {
+    function unpause() public onlyOwner whenPaused {
         paused = false;
-        emit Unpause();
+        emit Unpaused(msg.sender);
     }
 }
