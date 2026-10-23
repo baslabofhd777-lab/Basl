@@ -1,53 +1,96 @@
-pragma solidity ^0.4.18;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-import "./TimelockToken.sol";
 import "./Pausable.sol";
 
-contract UpgradedStandard is Pausable {
-    string public name = "APENFT";
-    string public symbol = "NFT";
-    uint8 public decimals = 6;
-    uint256 public _totalSupply;
+/**
+ * @title APENFT
+ * @dev ERC-20 Token with pause functionality
+ * Name: APENFT | Symbol: NFT | Decimals: 6
+ */
+contract APENFT is Pausable {
+    string public constant name = "APENFT";
+    string public constant symbol = "NFT";
+    uint8 public constant decimals = 6;
 
-    mapping (address => uint256) public balanceOf;
-    mapping (address => mapping (address => uint256)) public allowance;
+    uint256 private _totalSupply;
+
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    function UpgradedStandard(uint256 initialSupply) public {
+    constructor(uint256 initialSupply) {
         _totalSupply = initialSupply * 10 ** uint256(decimals);
-        balanceOf[msg.sender] = _totalSupply;
+        _balances[msg.sender] = _totalSupply;
+        emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
 
-    function transfer(address _to, uint256 _value) public whenNotPaused returns (bool success) {
-        require(_to != address(0));
-        require(balanceOf[msg.sender] >= _value);
-        
-        balanceOf[msg.sender] -= _value;
-        balanceOf[_to] += _value;
-        emit Transfer(msg.sender, _to, _value);
-        return true;
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account];
     }
-require(_value == 0 || allowance[msg.sender][_spender] == 0);
-allowance[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
+
+    function transfer(address to, uint256 amount) public whenNotPaused returns (bool) {
+        _transfer(msg.sender, to, amount);
         return true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool success) {
-        require(_to != address(0));
-        require(balanceOf[_from] >= _value);
-        require(allowance[_from][msg.sender] >= _value);
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
+    }
 
-        balanceOf[_from] -= _value;
-        balanceOf[_to] += _value;
-        allowance[_from][msg.sender] -= _value;
-        emit Transfer(_from, _to, _value);
+    function approve(address spender, uint256 amount) public whenNotPaused returns (bool) {
+        _approve(msg.sender, spender, amount);
         return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public whenNotPaused returns (bool) {
+        uint256 currentAllowance = _allowances[from][msg.sender];
+        require(currentAllowance >= amount, "ERC20: insufficient allowance");
+        unchecked {
+            _approve(from, msg.sender, currentAllowance - amount);
+        }
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function increaseAllowance(address spender, uint256 addedValue) public whenNotPaused returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender] + addedValue);
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public whenNotPaused returns (bool) {
+        uint256 currentAllowance = _allowances[msg.sender][spender];
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        unchecked {
+            _approve(msg.sender, spender, currentAllowance - subtractedValue);
+        }
+        return true;
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+
+        uint256 fromBalance = _balances[from];
+        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        unchecked {
+            _balances[from] = fromBalance - amount;
+            _balances[to] += amount;
+        }
+        emit Transfer(from, to, amount);
+    }
+
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
 }
