@@ -1,35 +1,50 @@
 # Basl
 
-Smart contracts repository containing modernized Solidity contracts.
+مستودع العقود الذكية الرئيسي — تم دمج وتنظيف كل المحتوى المفيد هنا.
 
-## Contracts
+## العقود المتوفرة (Solidity ^0.8.20)
 
-### APENFT.sol
-- Full ERC-20 token implementation
-- Name: `APENFT` | Symbol: `NFT` | Decimals: `6`
-- Includes pause/unpause functionality (owner only)
-- Solidity `^0.8.20`
+| العقد | الوصف |
+|------|------|
+| **APENFT.sol** | توكن ERC-20 كامل مع خاصية Pause (الاسم: APENFT، الرمز: NFT، 6 منازل عشرية) |
+| **SimpleERC20.sol** | توكن ERC-20 بسيط ونظيف (قابل للتخصيص في الاسم والرمز) |
+| **Pausable.sol** | عقود أساسية: Ownable + Pausable |
+| **TimelockToken.sol** | قفل زمني للتوكنات (يُحرر بعد وقت محدد) |
 
-### Pausable.sol
-- `Ownable` + `Pausable` base contracts
-- Access control and emergency pause mechanism
+## أمثلة الاستخدام
 
-### TimelockToken.sol
-- Token timelock contract
-- Releases tokens to a beneficiary after a specified time
-
-## Usage
-
+### APENFT
 ```solidity
-// Deploy APENFT with initial supply (e.g. 1_000_000_000)
+// نشر توكن بمليار وحدة
 APENFT token = new APENFT(1_000_000_000);
 
-// Pause transfers (owner only)
+// إيقاف التحويلات (المالك فقط)
 token.pause();
 
-// Unpause
+// إعادة التفعيل
 token.unpause();
 ```
 
-## License
+### SimpleERC20
+```solidity
+// نشر توكن مخصص
+SimpleERC20 token = new SimpleERC20("MyToken", "MTK", 1_000_000);
+```
+
+### TimelockToken
+```solidity
+// قفل توكنات لمدة معينة
+TimelockToken lock = new TimelockToken(
+    address(token),
+    beneficiaryAddress,
+    block.timestamp + 30 days
+);
+```
+
+## الملفات الأخرى
+- `env.example` — مثال لمفاتيح البيئة
+- `agent.json` + `skills/` — إعدادات المهارات (code-reviewer وغيرها)
+- `.github/workflows/` — سير عمل GitHub
+
+## الترخيص
 Apache-2.0
