@@ -1,0 +1,92 @@
+name: Structured issue report
+description: Report a reproducible bug, documentation problem, or actionable improvement
+title: "[Report]: "
+labels:
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue.
+
+        Do not paste automated review summaries, bot transcripts, or content copied from another repository. If this report came from an automated tool, rewrite it as a concrete, repository-specific finding and include the affected file or workflow.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Report category
+      description: Choose the primary type of work needed.
+      options:
+        - Bug
+        - Security concern
+        - Documentation
+        - Enhancement
+        - Build or CI failure
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Clear summary
+      description: State the problem or requested change in one or two sentences.
+      placeholder: The contract rejects ... when ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Repository-specific context
+      description: Identify the affected file, function, contract, workflow, or documentation section. Link the relevant commit or pull request when applicable.
+      placeholder: |
+        File or component: SimpleERC20.sol, transfer()
+        Commit or PR: #123
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce or verify
+      description: Provide commands, inputs, environment details, and the smallest reliable reproduction. For documentation or enhancement reports, explain how the current behavior was verified.
+      placeholder: |
+        1. Check out commit ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior and acceptance criteria
+      description: Describe the desired result and how a maintainer can confirm that the issue is resolved.
+      placeholder: |
+        Expected behavior: ...
+        Acceptance criteria: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and relevant logs
+      description: Include test output, screenshots, links, or security impact. Redact secrets and personal data. Do not include an automated transcript without explaining the finding.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checklist
+      options:
+        - label: I searched existing issues and pull requests for duplicates.
+          required: true
+        - label: This report is specific to this repository and is not copied from another project.
+          required: true
+        - label: I have removed secrets, credentials, and private information.
+          required: true
+        - label: I have converted any automated-tool output into a concrete, human-readable finding.
+          required: true
