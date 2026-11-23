@@ -1,0 +1,269 @@
+name: Triage new issues
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+
+  issue_comment:
+    types:
+      - created
+
+  workflow_dispatch:
+    inputs:
+      category:
+        description: Category to simulate
+        required: true
+        type: choice
+        options:
+          - Bug
+          - Security concern
+          - Documentation
+          - Enhancement
+          - Build or CI failure
+      issue_body:
+        description: Optional simulated issue-form body (used for dry runs)
+        required: false
+        type: string
+        default: ''
+      issue_number:
+        description: Existing issue number to use for a non-dry-run test
+        required: false
+        type: number
+        default: 0
+      dry_run:
+        description: Preview the result without changing labels or assignees
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    name: Classify and assign issue
+    if: github.event_name == 'issues' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Apply labels and assign maintainer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isDispatch = context.eventName === 'workflow_dispatch';
+            const inputs = context.payload.inputs || {};
+            const eventIssue = context.payload.issue || null;
+
+            const categoryMap = {
+              'Bug': {
+                label: {
+                  name: 'bug',
+                  color: 'd73a4a',
+                  description: "Something isn't working"
+                },
+                assignees: ['baslabofhd777-lab']
+              },
+              'Security concern': {
+                label: {
+                  name: 'security',
+                  color: 'b60205',
+                  description: 'Potential security concern'
+                },
+                assignees: ['baslabofhd777-lab']
+              },
+              'Documentation': {
+                label: {
+                  name: 'documentation',
+                  color: '0075ca',
+                  description: 'Improvements or additions to documentation'
+                },
+                assignees: ['baslabofhd777-lab']
+              },
+              'Enhancement': {
+                label: {
+                  name: 'enhancement',
+                  color: 'a2eeef',
+                  description: 'New feature or request'
+                },
+                assignees: ['baslabofhd777-lab']
+              },
+              'Build or CI failure': {
+                label: {
+                  name: 'ci',
+                  color: '5319e7',
+                  description: 'Build or continuous integration failure'
+                },
+                assignees: ['baslabofhd777-lab']
+              }
+            };
+
+            const triageLabel = {
+              name: 'needs-triage',
+              color: 'fbca04',
+              description: 'Needs maintainer triage before work begins'
+            };
+
+            let issueNumber = eventIssue?.number || 0;
+            let body = eventIssue?.body || '';
+            let selectedCategory = null;
+            let dryRun = false;
+
+            if (isDispatch) {
+              issueNumber = Number(inputs.issue_number || 0);
+              dryRun = inputs.dry_run !== 'false';
+
+              if (dryRun) {
+                body = inputs.issue_body || '';
+                selectedCategory = inputs.category || null;
+              } else {
+                if (!issueNumber) {
+                  core.setFailed(
+                    'issue_number is required when dry_run is false.'
+                  );
+                  return;
+                }
+
+                const { data: fetchedIssue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+
+                body = fetchedIssue.body || '';
+              }
+            }
+
+            if (!selectedCategory) {
+              const categoryMatch = body.match(
+                /### Report category\s*\r?\n(?:<!--.*?-->\s*)?([^\r\n]+)/
+              );
+              selectedCategory = categoryMatch
+                ? categoryMatch[1].trim()
+                : null;
+            }
+
+            const category = categoryMap[selectedCategory] || null;
+            const labelsToApply = [triageLabel.name];
+            const labelsToEnsure = [triageLabel];
+
+            if (category) {
+              labelsToApply.push(category.label.name);
+              labelsToEnsure.push(category.label);
+            }
+
+            core.info(`Event: ${context.eventName}`);
+            core.info(`Issue: #${issueNumber || '(simulation)'}`);
+            core.info(`Category: ${selectedCategory || '(not detected)'}`);
+            core.info(`Labels: ${labelsToApply.join(', ')}`);
+            core.info(
+              `Assignees: ${category?.assignees?.join(', ') || '(none)'}`
+            );
+            core.info(`Dry run: ${dryRun}`);
+
+            if (dryRun) {
+              core.info('Dry run complete. No GitHub data was changed.');
+              return;
+            }
+
+            for (const label of labelsToEnsure) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              labels: labelsToApply
+            });
+
+            if (category?.assignees?.length) {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                assignees: category.assignees
+              });
+            }
+
+            core.info('Labels and assignees applied successfully.');
+
+  remove-triage-after-maintainer-response:
+    name: Remove triage label after maintainer response
+    if: >-
+      github.event_name == 'issue_comment' &&
+      !github.event.issue.pull_request
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Remove needs-triage after trusted assigned response
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const comment = context.payload.comment;
+            const commenter = comment.user.login;
+
+            // Keep this list limited to people who are allowed to complete triage.
+            const approvedMaintainers = [
+              'baslabofhd777-lab'
+            ];
+
+            if (!approvedMaintainers.includes(commenter)) {
+              core.info(
+                `${commenter} is not an approved maintainer. Keeping needs-triage.`
+              );
+              return;
+            }
+
+            const isAssignedMaintainer = issue.assignees.some(
+              assignee => assignee.login === commenter
+            );
+
+            if (!isAssignedMaintainer) {
+              core.info(
+                `${commenter} is approved but is not assigned to issue #${issue.number}. Keeping needs-triage.`
+              );
+              return;
+            }
+
+            const hasTriageLabel = issue.labels.some(
+              label => label.name === 'needs-triage'
+            );
+
+            if (!hasTriageLabel) {
+              core.info(
+                `Issue #${issue.number} does not have needs-triage. Nothing to remove.`
+              );
+              return;
+            }
+
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              name: 'needs-triage'
+            });
+
+            core.info(
+              `Removed needs-triage from issue #${issue.number} after response by ${commenter}.`
+            );
